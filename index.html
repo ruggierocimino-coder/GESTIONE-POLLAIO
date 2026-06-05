@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AviaGest Professionale</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AviaGest">
+    
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --card-dark: #1e1e1e;
+            --accent-gold: #d4af37;
+            --text-light: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            --alert-red: #ff5252;
+            --warning-orange: #ff9800;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {
+            background-color: var(--bg-dark); color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 85px) 16px;
+        }
+        h2, h3 { color: var(--accent-gold); margin-bottom: 12px; }
+        header { text-align: center; padding: 15px 0; border-bottom: 1px solid var(--border-color); margin-bottom: 15px; }
+        
+        .section { display: none; animation: fadeIn 0.2s ease-in-out; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .card { background-color: var(--card-dark); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        label { display: block; margin-bottom: 4px; color: var(--text-muted); font-size: 13px; }
+        input, select, textarea {
+            width: 100%; padding: 11px; background-color: #2a2a2a; border: 1px solid var(--border-color);
+            border-radius: 8px; color: var(--text-light); font-size: 15px; margin-bottom: 12px;
+        }
+        
+        button {
+            width: 100%; background-color: var(--accent-gold); color: #000; border: none;
+            padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer;
+        }
+        button:active { background-color: #b5942b; }
+        .btn-sec { background-color: #333; color: var(--text-light); border: 1px solid var(--border-color); margin-top: 5px;}
+        .btn-del { background: none; color: var(--alert-red); border: none; width: auto; padding: 4px 8px; font-size: 13px; }
+        
+        nav {
+            position: fixed; bottom: 0; left: 0; right: 0; background-color: #1a1a1a;
+            border-top: 1px solid var(--border-color); display: flex; justify-content: space-around;
+            padding: 8px 0 calc(env(safe-area-inset-bottom) + 8px) 0; z-index: 1000;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 10px; background: none; border: none; width: auto; }
+        .nav-item.active { color: var(--accent-gold); }
+        .nav-icon { font-size: 20px; margin-bottom: 2px; }
+
+        .item-list { border-bottom: 1px solid #2a2a2a; padding: 8px 0; display: flex; justify-content: space-between; align-items: center; }
+        .item-list:last-child { border-bottom: none; }
+        .badge { background-color: #2a2a2a; padding: 3px 6px; border-radius: 4px; font-size: 11px; color: var(--accent-gold); }
+        .badge-alert { background-color: #421212; color: var(--alert-red); padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <header><h2>AviaGest Pro</h2></header>
+
+    <!-- TAB 1: DASHBOARD -->
+    <div id="tab-dash" class="section active">
+        <h3>📊 Stato Allevamento</h3>
+        <div class="card">
+            <div id="allerta-sanitaria"></div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <label>Uova Totali</label>
+                <h2 id="d-uova">0</h2>
+            </div>
+            <div class="card">
+                <label>Gruppi Attivi</label>
+                <h2 id="d-gruppi">0</h2>
+            </div>
+        </div>
+        <div class="card">
+            <h3>🐣 Incubazioni in Corso (21gg)</h3>
+            <div id="dash-inc"></div>
+        </div>
+    </div>
+
+    <!-- TAB 2: GRUPPI E RAZZE -->
+    <div id="tab-gruppi" class="section">
+        <h3>🏡 Gestione Gruppi & Recinti</h3>
+        <div class="card">
+            <form id="f-gruppo">
+                <label>Nome Gruppo / Recinto</label>
+                <input type="text" id="g-nome" placeholder="Es. Recinto 1, Riproduttori..." required>
+                
+                <label>Razze e Capi all'interno (Descrizione)</label>
+                <textarea id="g-capi" rows="2" placeholder="Es. 1 Gallo + 4 Galline Australorp, 2 Marans..." required></textarea>
+                
+                <button type="submit">Crea / Aggiorna Gruppo</button>
+            </form>
+        </div>
+        <div class="card">
+            <h3>Gruppi Esistenti</h3>
+            <div id="elenco-gruppi"></div>
+        </div>
+    </div>
+
+    <!-- TAB 3: RACCOLTA UOVA -->
+    <div id="tab-uova" class="section">
+        <h3>🥚 Registro Uova</h3>
+        <div class="card">
+            <form id="f-uova">
+                <label>Data</label>
+                <input type="date" id="u-data" required>
+                
+                <label>Gruppo di Provenienza</label>
+                <select id="u-gruppo" required><option value="">Seleziona gruppo...</option></select>
+
+                <div class="grid-2">
+                    <div>
+                        <label>Colore Guscio</label>
+                        <select id="u-colore">
+                            <option value="Marrone Classico">Marrone Classico</option>
+                            <option value="Cioccolato (Marans)">Cioccolato (Marans)</option>
+                            <option value="Azzurro (Legbar)">Azzurro (Legbar)</option>
+                            <option value="Verde/Oliva (Olive Egger)">Verde/Oliva (Olive Egger)</option>
+                            <option value="Bianco (Padovana)">Bianco (Padovana)</option>
+                            <option value="Rosato">Rosato</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Quantità</label>
+                        <input type="number" id="u-qta" min="1" required>
+                    </div>
+                </div>
+                <button type="submit">Registra Uova</button>
+            </form>
+        </div>
+        <div class="card">
+            <h3>Ultime Raccolte</h3>
+            <div id="elenco-uova"></div>
+        </div>
+    </div>
+
+    <!-- TAB 4: SANITÀ E CURE -->
+    <div id="tab-salute" class="section">
+        <h3>💊 Registro Sanitario & Trattamenti</h3>
+        <div class="card">
+            <form id="f-salute">
+                <label>Data Inizio</label>
+                <input type="date" id="s-data" required>
+
+                <label>Gruppo o Capo Trattato</label>
+                <select id="s-gruppo" required><option value="">Seleziona bersaglio...</option></select>
+
+                <label>Tipo di Prodotto</label>
+                <select id="s-tipo" onchange="VerificaSospensione()">
+                    <option value="Medicina / Antibiotico">Medicina / Farmaco / Antibiotico</option>
+                    <option value="Antiparassitario">Antiparassitario (Interno/Esterno)</option>
+                    <option value="Integratore / Vitamine">Integratore / Vitamine (Senza sospensione)</option>
+                </select>
+
+                <label>Nome Farmaco / Integratore</label>
+                <input type="text" id="s-nome" placeholder="Es. Vermifugo XYZ, Vitamine C..." required>
+
+                <div id="box-sospensione">
+                    <label>Data Fine Cura / Fine Sospensione Uova</label>
+                    <input type="date" id="s-fine">
+                    <small style="color: var(--warning-orange); display:block; margin-bottom:10px;">⚠️ Oltre questa data le uova torneranno edibili.</small>
+                </div>
+
+                <button type="submit">Registra Trattamento</button>
+            </form>
+        </div>
+        <div class="card">
+            <h3>Trattamenti Attivi e Storico</h3>
+            <div id="elenco-salute"></div>
+        </div>
+    </div>
+
+    <!-- TAB 5: INCUBATRICE -->
+    <div id="tab-inc" class="section">
+        <h3>🐣 Incubatrice</h3>
+        <div class="card">
+            <form id="f-inc">
+                <label>Data Avvio</label>
+                <input type="date" id="i-data" required>
+                <label>Note / Razze Incubate</label>
+                <input type="text" id="i-note" placeholder="Es. 10 Marans, 5 Australorp..." required>
+                <label>Numero Uova Totali</label>
+                <input type="number" id="i-qta" min="1" required>
+                <button type="submit">Fissa Scadenza Schiusa (21 gg)</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- TAB 6: BACKUP -->
+    <div id="tab-config" class="section">
+        <h3>⚙️ Backup</h3>
+        <div class="card">
+            <button onclick="esportaDati()" class="btn-sec">📥 Scarica File di Backup (.json)</button>
+            <label style="margin-top:15px;">📤 Ripristina Backup</label>
+            <input type="file" id="imp-file" onchange="importaDati()" accept=".json">
+            <button onclick="resetTutto()" class="btn-del" style="border: 1px solid var(--alert-red); width:100%; padding:10px; margin-top:15px;">Cancella Tutto</button>
+        </div>
+    </div>
+
+    <!-- NAVIGAZIONE -->
+    <nav>
+        <button class="nav-item active" onclick="tab('tab-dash')"><span class="nav-icon">📊</span>Dashboard</button>
+        <button class="nav-item" onclick="tab('tab-gruppi')"><span class="nav-icon">🏡</span>Gruppi</button>
+        <button class="nav-item" onclick="tab('tab-uova')"><span class="nav-icon">🥚</span>Uova</button>
+        <button class="nav-item" onclick="tab('tab-salute')"><span class="nav-icon">💊</span>Salute</button>
+        <button class="nav-item" onclick="tab('tab-inc')"><span class="nav-icon">🐣</span>Incuba</button>
+        <button class="nav-item" onclick="tab('tab-config')"><span class="nav-icon">⚙️</span>Dati</button>
+    </nav>
+
+    <script>
+        let data = JSON.parse(localStorage.getItem('aviahub_pro')) || { gruppi: [], uova: [], salute: [], inc: [] };
+
+        function salva() { localStorage.setItem('aviahub_pro', JSON.stringify(data)); ui(); }
+        
+        function tab(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const oggi = new Date().toISOString().split('T')[0];
+            ['u-data', 's-data', 'i-data'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = oggi; });
+            ui();
+        });
+
+        function VerificaSospensione() {
+            const t = document.getElementById('s-tipo').value;
+            document.getElementById('box-sospensione').style.display = (t === 'Integratore / Vitamine') ? 'none' : 'block';
+        }
+
+        // Inserimenti Form
+        document.getElementById('f-gruppo').addEventListener('submit', e => {
+            e.preventDefault();
+            data.gruppi.push({ id: Date.now(), nome: document.getElementById('g-nome').value, capi: document.getElementById('g-capi').value });
+            document.getElementById('f-gruppo').reset(); salva();
+        });
+
+        document.getElementById('f-uova').addEventListener('submit', e => {
+            e.preventDefault();
+            data.uova.push({ id: Date.now(), data: document.getElementById('u-data').value, gruppo: document.getElementById('u-gruppo').value, colore: document.getElementById('u-colore').value, qta: parseInt(document.getElementById('u-qta').value) });
+            document.getElementById('u-qta').value = ''; salva();
+        });
+
+        document.getElementById('f-salute').addEventListener('submit', e => {
+            e.preventDefault();
+            data.salute.push({
+                id: Date.now(), data: document.getElementById('s-data').value, gruppo: document.getElementById('s-gruppo').value,
+                tipo: document.getElementById('s-tipo').value, nome: document.getElementById('s-nome').value,
+                fine: document.getElementById('s-tipo').value !== 'Integratore / Vitamine' ? document.getElementById('s-fine').value : ''
+            });
+            document.getElementById('f-salute').reset(); VerificaSospensione(); salva();
+        });
+
+        document.getElementById('f-inc').addEventListener('submit', e => {
+            e.preventDefault();
+            let dInizio = new Date(document.getElementById('i-data').value);
+            let dSchiusa = new Date(dInizio); dSchiusa.setDate(dInizio.getDate() + 21);
+            data.inc.push({ id: Date.now(), fine: dSchiusa.toISOString().split('T')[0], note: document.getElementById('i-note').value, qta: document.getElementById('i-qta').value });
+            document.getElementById('f-inc').reset(); salva(); tab('tab-dash');
+        });
+
+        // Eliminazioni
+        function del(cat, id) { data[cat] = data[cat].filter(x => x.id !== id); salva(); }
+
+        // Render Interfaccia Dinamica
+        function ui() {
+            const oggiStr = new Date().toISOString().split('T')[0];
+            
+            // Aggiorna Select dei Gruppi
+            const selUova = document.getElementById('u-gruppo');
+            const selSalute = document.getElementById('s-gruppo');
+            let opzioni = '<option value="">Seleziona gruppo...</option>' + data.gruppi.map(g => `<option value="${g.nome}">${g.nome}</option>`).join('');
+            selUova.innerHTML = opzioni;
+            selSalute.innerHTML = opzioni + '<option value="Tutto l\'Allevamento">Tutto l\'Allevamento</option>';
+
+            // Conteggi Celeri
+            document.getElementById('d-uova').innerText = data.uova.reduce((a, b) => a + b.qta, 0);
+            document.getElementById('d-gruppi').innerText = data.gruppi.length;
+
+            // Controllo Blocco Uova Non Edibili (Sospensione attiva)
+            let cureAttive = data.salute.filter(s => s.fine && s.fine >= oggiStr);
+            const boxAllerta = document.getElementById('allerta-sanitaria');
+            if(cureAttive.length > 0) {
+                boxAllerta.innerHTML = `<div style="color:var(--alert-red); font-weight:bold; text-align:center;">⚠️ ATTENZIONE: Ci sono animali sotto cura. Verificare il tempo di sospensione prima di consumare o vendere le uova!</div>`;
+            } else {
+                boxAllerta.innerHTML = `<div style="color:#4caf50; text-align:center;">✅ Nessun tempo di carenza/sospensione attivo. Uova sicure.</div>`;
+            }
+
+            // Elenco Gruppi
+            document.getElementById('elenco-gruppi').innerHTML = data.gruppi.map(g => `
+                <div class="item-list">
+                    <div><strong>${g.nome}</strong><br><small style="color:var(--text-muted);">${g.capi}</small></div>
+                    <button class="btn-del" onclick="del('gruppi', ${g.id})">Rimuovi</button>
+                </div>
+            `).join('') || '<p style="color:var(--text-muted);">Nessun gruppo inserito.</p>';
+
+            // Elenco Uova
+            document.getElementById('elenco-uova').innerHTML = data.uova.map(u => `
+                <div class="item-list">
+                    <div><strong>${u.data.split('-').reverse().join('/')}</strong> - ${u.gruppo}<br><small style="color:var(--text-muted);">Guscio: ${u.colore}</small></div>
+                    <div><span class="badge">${u.qta} uova</span><button class="btn-del" onclick="del('uova', ${u.id})">X</button></div>
+                </div>
+            `).join('') || '<p style="color:var(--text-muted);">Nessuna raccolta.</p>';
+
+            // Elenco Sanità
+            document.getElementById('elenco-salute').innerHTML = data.salute.map(s => {
+                let badgeSosp = s.fine ? (s.fine >= oggiStr ? `<span class="badge-alert">⚠️ Sospensione fino al ${s.fine.split('-').reverse().join('/')}</span>` : `<span class="badge" style="color:#4caf50;">✓ Cura Terminata</span>`) : '<span class="badge">Integratore (0 giorni)</span>';
+                return `
+                    <div class="item-list">
+                        <div><strong>${s.nome}</strong> (${s.tipo})<br><small style="color:var(--text-muted);">Su: ${s.gruppo} del ${s.data.split('-').reverse().join('/')}</small><br>${badgeSosp}</div>
+                        <button class="btn-del" onclick="del('salute', ${s.id})">X</button>
+                    </div>
+                `;
+            }).join('') || '<p style="color:var(--text-muted);">Nessun trattamento in archivio.</p>';
+
+            // Elenco Incubazioni Dashboard
+            document.getElementById('dash-inc').innerHTML = data.inc.map(i => `
+                <div class="item-list">
+                    <div><strong>${i.qta} uova</strong> - ${i.note}<br><small style="color:var(--text-muted);">Schiusa prevista il: ${i.fine.split('-').reverse().join('/')}</small></div>
+                    <button class="btn-del" onclick="del('inc', ${i.id})">Rimuovi</button>
+                </div>
+            `).join('') || '<p style="color:var(--text-muted);">Nessuna incubazione attiva.</p>';
+        }
+
+        // Backup e Reset
+        function esportaDati() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+            const a = document.createElement('a'); a.setAttribute("href", dataStr);
+            a.setAttribute("download", `Backup_AviaGestPro_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(a); a.click(); a.remove();
+        }
+        function importaDati() {
+            const f = document.getElementById('imp-file'); if (f.files.length === 0) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.gruppi && parsed.uova) { data = parsed; salva(); alert("Dati importati!"); }
+                } catch (err) { alert("File non valido."); }
+            };
+            reader.readAsText(f.files[0]);
+        }
+        function resetTutto() { if(confirm("Cancellare tutto definitivamente?")) { data = { gruppi: [], uova: [], salute: [], inc: [] }; salva(); } }
+    </script>
+</body>
+</html>
