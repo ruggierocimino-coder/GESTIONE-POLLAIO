@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AviaGest Pollaio</title>
+    
+    <!-- Opzioni per App Nativa su iOS (Safari) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AviaGest">
+    
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --card-dark: #1e1e1e;
+            --accent-gold: #d4af37;
+            --text-light: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            --success-green: #2e7d32;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 80px) 16px;
+            font-size: 16px;
+        }
+
+        h1, h2, h3 {
+            color: var(--accent-gold);
+            margin-bottom: 15px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background-color: var(--card-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* Form ed Input per il Touch */
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background-color: #2a2a2a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-light);
+            font-size: 16px;
+            margin-bottom: 14px;
+            -webkit-appearance: none;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+        }
+
+        /* Bottoni stile iOS */
+        button {
+            width: 100%;
+            background-color: var(--accent-gold);
+            color: #000;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 5px;
+        }
+
+        button:active {
+            background-color: #b5942b;
+        }
+
+        button.btn-secondary {
+            background-color: #333;
+            color: var(--text-light);
+            border: 1px solid var(--border-color);
+        }
+
+        button.btn-secondary:active {
+            background-color: #444;
+        }
+
+        /* Menu di Navigazione Inferiore Fisso (Tab Bar) */
+        nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #1a1a1a;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0 calc(env(safe-area-inset-bottom) + 10px) 0;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 11px;
+            text-decoration: none;
+            background: none;
+            border: none;
+            padding: 0;
+            width: auto;
+            margin: 0;
+        }
+
+        .nav-item.active {
+            color: var(--accent-gold);
+        }
+
+        .nav-icon {
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+
+        /* Liste dei Record */
+        .record-item {
+            border-bottom: 1px solid #2a2a2a;
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .record-item:last-child {
+            border-bottom: none;
+        }
+
+        .delete-btn {
+            background: none;
+            color: #ff5252;
+            width: auto;
+            padding: 5px 10px;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .badge {
+            background-color: #2a2a2a;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--accent-gold);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h2>AviaGest Pollaio</h2>
+    </header>
+
+    <!-- SEZIONE 1: PLANCIA (DASHBOARD) -->
+    <div id="dashboard" class="section active">
+        <h3>📊 Stato Attuale</h3>
+        <div class="grid-2">
+            <div class="card">
+                <label>Uova Raccolte (Mese)</label>
+                <h2 id="dash-uova">0</h2>
+            </div>
+            <div class="card">
+                <label>Totale Capi</label>
+                <h2 id="dash-capi">0</h2>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>🐣 Incubatrice & Nascite</h3>
+            <div id="lista-incubate">
+                <p style="color: var(--text-muted);">Nessuna incubazione attiva.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEZIONE 2: REGISTRO UOVA -->
+    <div id="uova" class="section">
+        <h3>🥚 Raccolta Uova</h3>
+        <div class="card">
+            <form id="form-uova">
+                <label for="uova-data">Data</label>
+                <input type="date" id="uova-data" required>
+
+                <label for="uova-razza">Razza / Gruppo</label>
+                <select id="uova-razza">
+                    <option value="Misto">Misto / Non Specificato</option>
+                    <option value="Australorp">Australorp</option>
+                    <option value="Amrock">Amrock</option>
+                    <option value="Marans">Marans</option>
+                    <option value="Olive Egger">Olive Egger</option>
+                    <option value="Cream Legbar">Cream Legbar</option>
+                    <option value="Padovana">Padovana</option>
+                </select>
+
+                <label for="uova-quantita">Quantità Uova</label>
+                <input type="number" id="uova-quantita" min="1" placeholder="Es. 5" required>
+
+                <button type="submit">Registra Raccolta</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Ultime Raccolte</h3>
+            <div id="cronologia-uova"></div>
+        </div>
+    </div>
+
+    <!-- SEZIONE 3: INCUBATRICE -->
+    <div id="incubatrice" class="section">
+        <h3>🧬 Nuova Incubazione</h3>
+        <div class="card">
+            <form id="form-incubazione">
+                <label for="inc-data">Data Avvio Incubatrice</label>
+                <input type="date" id="inc-data" required>
+
+                <label for="inc-razza">Razza</label>
+                <select id="inc-razza" id="inc-razza">
+                    <option value="Australorp">Australorp</option>
+                    <option value="Amrock">Amrock</option>
+                    <option value="Marans">Marans</option>
+                    <option value="Olive Egger">Olive Egger</option>
+                    <option value="Cream Legbar">Cream Legbar</option>
+                    <option value="Padovana">Padovana</option>
+                    <option value="Incrocio">Incrocio</option>
+                </select>
+
+                <label for="inc-uova">Numero Uova Incubate</label>
+                <input type="number" id="inc-uova" min="1" required>
+
+                <button type="submit">Avvia Ciclo (21 Giorni)</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SEZIONE 4: STRUMENTI & BACKUP -->
+    <div id="impostazioni" class="section">
+        <h3>⚙️ Gestione Dati</h3>
+        <div class="card">
+            <p style="margin-bottom: 15px; font-size: 14px; color: var(--text-muted);">I dati salvati risiedono in sicurezza sulla memoria locale del tuo iPhone.</p>
+            <button onclick="esportaDati()" class="btn-secondary" style="margin-bottom: 10px;">📥 Esporta Backup (Scarica File)</button>
+            
+            <label style="margin-top: 10px;">📤 Importa Backup (.json)</label>
+            <input type="file" id="import-file" onchange="importaDati()" accept=".json" style="background: none; border: none; padding: 0;">
+            
+            <button onclick="resetTotale()" class="delete-btn" style="width: 100%; border: 1px solid #ff5252; padding: 12px; border-radius: 8px; margin-top: 20px;">⚠️ Cancella Tutti i Dati</button>
+        </div>
+    </div>
+
+    <!-- TAB BAR INFERIORE (STILE IOS) -->
+    <nav>
+        <button class="nav-item active" onclick="switchTab('dashboard')">
+            <span class="nav-icon">📊</span>
+            <span>Dashboard</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('uova')">
+            <span class="nav-icon">🥚</span>
+            <span>Uova</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('incubatrice')">
+            <span class="nav-icon">🐣</span>
+            <span>Incuba</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('impostazioni')">
+            <span class="nav-icon">⚙️</span>
+            <span>Dati</span>
+        </button>
+    </nav>
+
+    <script>
+        // Inizializzazione Database Locale (LocalStorage)
+        let db = JSON.parse(localStorage.getItem('aviahub_data')) || {
+            uova: [],
+            incubazioni: [],
+            anagraficaCapi: 0
+        };
+
+        function salvaDB() {
+            localStorage.setItem('aviahub_data', JSON.stringify(db));
+            aggiornaInterfaccia();
+        }
+
+        // Navigazione tra le schermate
+        function switchTab(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(sectionId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // Imposta la data di oggi in automatico nei form
+        document.addEventListener("DOMContentLoaded", () => {
+            const oggi = new Date().toISOString().split('T')[0];
+            if(document.getElementById('uova-data')) document.getElementById('uova-data').value = oggi;
+            if(document.getElementById('inc-data')) document.getElementById('inc-data').value = oggi;
+            aggiornaInterfaccia();
+        });
+
+        // Gestione inserimento Uova
+        document.getElementById('form-uova').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nuovaRaccolta = {
+                id: Date.now(),
+                data: document.getElementById('uova-data').value,
+                razza: document.getElementById('uova-razza').value,
+                quantita: parseInt(document.getElementById('uova-quantita').value)
+            };
+            db.uova.push(nuovaRaccolta);
+            salvaDB();
+            document.getElementById('uova-quantita').value = '';
+        });
+
+        // Gestione inserimento Incubatrice
+        document.getElementById('form-incubazione').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const dataInizio = new Date(document.getElementById('inc-data').value);
+            const dataSchiusa = new Date(dataInizio);
+            dataSchiusa.setDate(dataInizio.getDate() + 21); // Calcolo standard dei 21 giorni di incubazione
+
+            const nuovaIncubazione = {
+                id: Date.now(),
+                inizio: dataInizio.toISOString().split('T')[0],
+                schiusa: dataSchiusa.toISOString().split('T')[0],
+                razza: document.getElementById('inc-razza').value,
+                uova: parseInt(document.getElementById('inc-uova').value)
+            };
+            db.incubazioni.push(nuovaIncubazione);
+            salvaDB();
+            switchTab('dashboard');
+        });
+
+        // Funzioni di cancellazione singola
+        function eliminaUova(id) {
+            db.uova = db.uova.filter(item => item.id !== id);
+            salvaDB();
+        }
+
+        function terminaIncubazione(id) {
+            db.incubazioni = db.incubazioni.filter(item => item.id !== id);
+            salvaDB();
+        }
+
+        // Aggiornamento Visivo dei Dati nelle varie schermate
+        function aggiornaInterfaccia() {
+            // 1. Calcoli Dashboard
+            const totaleUovaMese = db.uova.reduce((acc, curr) => acc + curr.quantita, 0);
+            document.getElementById('dash-uova').innerText = totaleUovaMese;
+            
+            // Calcolo capi dinamico basato su uova incubate attive
+            const capiInIncubazione = db.incubazioni.reduce((acc, curr) => acc + curr.uova, 0);
+            document.getElementById('dash-capi').innerText = capiInIncubazione;
+
+            // 2. Render Elenco Incubazioni Attive nella Dashboard
+            const listaIncubate = document.getElementById('lista-incubate');
+            if(db.incubazioni.length === 0) {
+                listaIncubate.innerHTML = `<p style="color: var(--text-muted);">Nessuna incubazione attiva.</p>`;
+            } else {
+                listaIncubate.innerHTML = db.incubazioni.map(inc => {
+                    const dataSchiusaIta = inc.schiusa.split('-').reverse().join('/');
+                    return `
+                        <div class="record-item">
+                            <div>
+                                <strong>${inc.uova} uova di ${inc.razza}</strong><br>
+                                <small style="color: var(--text-muted);">Schiusa prevista il: ${dataSchiusaIta}</small>
+                            </div>
+                            <button class="delete-btn" onclick="terminaIncubazione(${inc.id})">Rimuovi</button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 3. Render Cronologia Uova Raccolte
+            const cronologiaUova = document.getElementById('cronologia-uova');
+            if(db.uova.length === 0) {
+                cronologiaUova.innerHTML = `<p style="color: var(--text-muted); text-align:center;">Nessun dato registrato.</p>`;
+            } else {
+                // Ordina per data più recente
+                const uovaOrdinate = [...db.uova].sort((a,b) => new Date(b.data) - new Date(a.data));
+                cronologiaUova.innerHTML = uovaOrdinate.slice(0, 5).map(u => {
+                    const dataIta = u.data.split('-').reverse().join('/');
+                    return `
+                        <div class="record-item">
+                            <div>
+                                <strong>${dataIta}</strong> - ${u.razza}
+                            </div>
+                            <div>
+                                <span class="badge">+ ${u.quantita} uova</span>
+                                <button class="delete-btn" onclick="eliminaUova(${u.id})" style="display:inline; margin-left:10px;">X</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Funzioni per l'esportazione e l'importazione dei Backup di Sicurezza
+        function esportaDati() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `Backup_Pollaio_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importaDati() {
+            const fileChooser = document.getElementById('import-file');
+            if (fileChooser.files.length === 0) return;
+            
+            const file = fileChooser.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.uova && parsed.incubazioni) {
+                        db = parsed;
+                        salvaDB();
+                        alert("Backup importato con successo!");
+                    } else {
+                        alert("File di backup non valido.");
+                    }
+                } catch (err) {
+                    alert("Errore nel caricamento del file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetTotale() {
+            if(confirm("Sei sicuro di voler cancellare definitivamente tutti i dati inseriti?")) {
+                db = { uova: [], incubazioni: [], anagraficaCapi: 0 };
+                salvaDB();
+            }
+        }
+    </script>
+</body>
+</html>
